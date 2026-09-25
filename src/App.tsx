@@ -16,6 +16,7 @@ import { TranslationControls } from "./components/TranslationControls";
 import { TranslationProgress } from "./components/TranslationProgress";
 import { TranslationResult } from "./components/TranslationResult";
 import { ErrorMessage } from "./components/ErrorMessage";
+import { safeFetchJson } from "./utils/api";
 import {
   LanguageCode,
   DocumentInfo,
@@ -81,7 +82,12 @@ export default function App() {
       reader.readAsDataURL(file);
       const base64Data = await base64Promise;
 
-      const response = await fetch("/api/extract-document", {
+      const data = await safeFetchJson<{
+        text: string;
+        wordCount: number;
+        charCount: number;
+        fileName: string;
+      }>("/api/extract-document", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -90,14 +96,6 @@ export default function App() {
           mimeType: file.type,
         }),
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.error || "Unable to extract text from this document. Please check the file and try again."
-        );
-      }
 
       setDocumentInfo({
         fileName: file.name,
@@ -177,7 +175,7 @@ export default function App() {
 
     try {
       if (translateToAll) {
-        const response = await fetch("/api/translate-all", {
+        const data = await safeFetchJson<MultiLanguageResult>("/api/translate-all", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -185,11 +183,6 @@ export default function App() {
             sourceLang,
           }),
         });
-
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.error || "Translation failed. Please try again.");
-        }
 
         // Step 3: Preparing
         setStatus("preparing");
@@ -200,7 +193,7 @@ export default function App() {
         setMultiResult(data);
         setSingleResult(null);
       } else {
-        const response = await fetch("/api/translate", {
+        const data = await safeFetchJson<SingleTranslationResult>("/api/translate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -209,11 +202,6 @@ export default function App() {
             targetLang: destinationLang,
           }),
         });
-
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.error || "Translation failed. Please try again.");
-        }
 
         // Step 3: Preparing
         setStatus("preparing");

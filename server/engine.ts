@@ -1,20 +1,13 @@
 import { GoogleGenAI } from "@google/genai";
 import { createRequire } from "module";
-
-const require = createRequire(import.meta.url);
+import mammoth from "mammoth";
 
 let pdfParse: any = null;
 try {
-  pdfParse = require("pdf-parse");
+  const req = typeof require !== "undefined" ? require : createRequire(import.meta.url);
+  pdfParse = req("pdf-parse");
 } catch {
-  // pdf-parse might not be available in all serverless environments
-}
-
-let mammoth: any = null;
-try {
-  mammoth = require("mammoth");
-} catch {
-  // mammoth optional check
+  // pdf-parse might not be available or needed; fallback handled via Gemini OCR
 }
 
 export const SUPPORTED_LANGUAGES: Record<string, string> = {
